@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no">
+    <title>2st 年度汇报</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* --- 基础设置 --- */
+        html, body {
+            position: relative;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #faf0f0; 
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* --- Loading 遮罩层 --- */
+        #loading-mask {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #faf0f0;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.8s;
+        }
+        .loading-heart {
+            font-size: 3rem;
+            color: #ff6b81;
+            animation: heartBeat 1.2s infinite;
+        }
+        .loading-text {
+            margin-top: 20px;
+            font-size: 1.1rem;
+            color: #666;
+            letter-spacing: 2px;
+        }
+        .progress-bar {
+            width: 200px;
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            margin-top: 15px;
+            overflow: hidden;
+        }
+        .progress-inner {
+            height: 100%;
+            width: 0%;
+            background: #ff6b81;
+            transition: width 0.2s;
+        }
+
+        /* 背景装饰圆点 */
+        .bg-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 182, 193, 0.4);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .c1 { width: 200px; height: 200px; top: -50px; left: -50px; }
+        .c2 { width: 300px; height: 300px; bottom: -80px; right: -80px; background: rgba(173, 216, 230, 0.3); }
+
+        .swiper {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            opacity: 0; /* 初始隐藏，加载完显示 */
+            transition: opacity 1s;
+        }
+
+        .swiper-slide {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 340px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .photo-frame {
+            width: 100%;
+            border-radius: 12px;
+            margin: 15px 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 3px solid #fff;
+            object-fit: cover;
+        }
+        
+        .long-photo {
+            max-height: 300px;
+            object-fit: contain;
+            background: #f5f5f5;
+        }
+
+        h1 { font-size: 2.5rem; color: #ff6b81; margin-bottom: 10px; }
+        h2 { font-size: 1.8rem; color: #444; margin: 10px 0; }
+        p { font-size: 1.1rem; line-height: 1.6; margin: 8px 0; color: #666; }
+        .highlight { color: #ff6b81; font-weight: bold; font-size: 1.2rem; }
+        .icon-box { font-size: 3rem; color: #ff6b81; margin-bottom: 15px; }
+        
+        .arrow-up {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 30px;
+            z-index: 10;
+            animation: moveUp 1.5s infinite;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        @keyframes moveUp {
+            0% { transform: translate(-50%, 0); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translate(-50%, -20px); opacity: 0; }
+        }
+
+        .swiper-slide .ani {
+            visibility: hidden;
+        }
+
+        /* --- 爱心照片墙样式 --- */
+        #heart-gallery-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+        }
+
+        .heart-photo {
+            position: absolute;
+            width: 40px; height: 40px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            opacity: 0;
+            left: 50%; top: 50%;
+            margin-left: -20px; margin-top: -20px;
+            transform: scale(0.1) rotate(0deg);
+            z-index: 0;
+            will-change: transform, opacity;
+        }
+
+        .heart-photo.active {
+            opacity: 1;
+            z-index: 1;
+        }
+
+        .final-text {
+            position: relative;
+            z-index: 10;
+            text-shadow: 0 2px 4px rgba(255, 255, 255, 0.8);
+            visibility: hidden; 
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading-mask">
+    <div class="loading-heart"><i class="fas fa-heart"></i></div>
+    <div class="loading-text">加载回忆中... <span id="percent">0%</span></div>
+    <div class="progress-bar">
+        <div class="progress-inner" id="progress-inner"></div>
+    </div>
+</div>
+
+<div class="bg-circle c1"></div>
+<div class="bg-circle c2"></div>
+
+<div style="position: absolute; top: 20px; right: 20px; z-index: 100; color: #555; opacity: 0.7;">
+    <i class="fas fa-music fa-spin" style="font-size: 24px;"></i>
+</div>
+
+<div class="swiper mySwiper">
+    <div class="swiper-wrapper">
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <div class="icon-box"><i class="fas fa-heart"></i></div>
+                <h1>2st</h1>
+                <h2>年度汇报</h2>
+                <p>2024 - 2025</p>
+                <p style="font-size: 0.8rem; color: #999;">Designed for Us</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__zoomIn">
+                <h2 style="letter-spacing: 5px;">大事记</h2>
+                <div style="width: 50px; height: 3px; background: #ff6b81; margin: 10px auto;"></div>
+                <p>Review of the Year</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInRight">
+                <div class="icon-box"><i class="fas fa-map-marked-alt"></i></div>
+                <p>这一年，你们的足迹遍布 <span class="highlight">7个城市</span></p>
+                <p style="font-size: 0.9rem;">成都，重庆，河北阿那亚，<br>上海，北京，腾冲，芒市</p>
+                <hr style="border:0; border-top:1px dashed #ddd; margin: 15px 0;">
+                <p>其中 <span class="highlight">成都</span> 到达过两次，<br>你们一定很喜欢这里吧</p>
+                <p style="font-size: 0.9rem; margin-top: 15px; color: #888;">Zmx的曹操出行已黑卡 <i class="fas fa-taxi"></i><br>它一定为你们的出行保驾护航了很久</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInLeft">
+                <div class="icon-box"><i class="fas fa-store"></i></div>
+                <p>这一年，你们一共打卡了</p>
+                <h2 class="highlight" style="font-size: 3rem; margin: 0;">104</h2>
+                <p>家店铺</p>
+                <div style="margin-top: 20px; text-align: left; background: #fff5f5; padding: 15px; border-radius: 10px;">
+                    <p><i class="fas fa-crown" style="color: gold;"></i> <strong>Waz最喜欢的是：</strong><br>保山金鸡铜锅苑(腾冲店)</p>
+                    <p style="margin-top: 10px;"><i class="fas fa-question-circle" style="color: #ff6b81;"></i> <strong>Zmx最喜欢的是哪家店呢？</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <p><i class="fas fa-bomb"></i> Waz觉得最难吃的是：</p>
+                <p class="highlight" style="font-size: 1rem;">阿那亚鱼市 Fish Market(剧场店)</p>
+                <hr style="border:0; border-top:1px dashed #ddd; margin: 20px 0;">
+                
+                <p class="highlight">腾冲 梓源农家乐</p>
+                <p><i class="fas fa-star" style="color: gold;"></i> <strong>一致被奉为百年难遇的美味：</strong></p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeIn">
+                <p>最轻松的一顿饭是</p>
+                <p class="highlight">锦府园·新台州菜(合生汇店)</p>
+                <img src="IMG_6504.jpeg" class="photo-frame" alt="锦府园美食">
+                <p style="font-size: 0.9rem;">复旦面试排在倒数第二个<br>赶在闭店前才吃上<br>也是十分美味的一顿了</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <p>这一年，</p>
+                <p>你们在 <span class="highlight">金色印象</span> 沉浸式炫饭</p>
+                <img src="IMG_1936.jpeg" class="photo-frame" alt="脱口秀">
+                <p>看了两场线下脱口秀</p>
+                <img src="IMG_5518.jpeg" class="photo-frame" alt="脱口秀">
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInDown">
+                <p>这一年，</p>
+                <div class="icon-box"><i class="fas fa-flask"></i> <i class="fas fa-microphone-alt"></i></div>
+                <p>你们一起制作了香水</p>
+                <img src="IMG_5621.jpeg" class="photo-frame" alt="纯k">
+            </div>
+        </div>
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInDown">
+                <p>在zmx的鼓励下<br>waz终于勇敢唱了ktv👏</p>
+                <p class="highlight">纯k真是美味 😋</p>
+                <img src="IMG_7937.jpeg" class="photo-frame" alt="纯k">
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__flipInX">
+                <p>这一年你们购买了第一个桌游</p>
+                <h2 class="highlight">璀璨宝石</h2>
+                <p>Waz大杀四方</p>
+                <img src="IMG_4600.jpeg" class="photo-frame" alt="璀璨宝石">
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__shakeX">
+                <div class="icon-box"><i class="fas fa-cloud-rain" style="color: #aab;"></i></div>
+                <p>据不完全统计，这一年你们吵架了 <span class="highlight">7次</span></p>
+                <p style="font-size: 0.9rem;">你们微信最长未对话时间为 <br><strong>8小时</strong>（异地期间）</p>
+                <hr style="border:0; border-top:1px solid #eee; margin: 20px 0;">
+                <p>哪怕吵得昏天黑地</p>
+                <p class="highlight">你们还是放不下对方 <i class="fas fa-heart"></i></p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <div class="icon-box"><i class="fab fa-weixin" style="color: #07c160;"></i></div>
+                <p>这一年，你们微信最爱说的话是：</p>
+                <div style="text-align: left; margin-top: 20px;">
+                    <p><i class="fas fa-heart" style="color:red;"></i> 爱你 <strong>1132次</strong></p>
+                    <p><i class="fas fa-kiss-wink-heart" style="color:pink;"></i> 亲亲 <strong>987次</strong></p>
+                    <p><i class="fas fa-sad-tear" style="color:blue;"></i> 想你 <strong>243次</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeIn">
+                <div class="icon-box"><i class="fas fa-graduation-cap"></i></div>
+                <p>你们在这一年一起迎接了</p>
+                <h2 class="highlight">“保研”</h2>
+                <p>自我怀疑时的相互扶持</p>
+                <p>是最珍贵的回忆吧</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__zoomIn">
+                <h2 style="font-family: serif; font-style: italic;">Little Things</h2>
+                <p>小事集</p>
+                <div style="font-size: 2rem; margin-top: 10px;">✨</div>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <p style="color: #999; font-size: 0.9rem;">2024年12月25日</p>
+                <p>这是你们开启第二年的第一天</p>
+                <p>这天waz被英语演讲期末折磨着</p>
+                <p>你带来了小蛋糕，椰汁紫米露和橘子</p>
+                <img src="IMG_1417.jpeg" class="photo-frame" alt="蛋糕与橘子">
+                 <p class="highlight">很好地抚慰了她🫶</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeIn">
+                <p style="color: #999; font-size: 0.9rem;">2025.1.7</p>
+                <p>距离膝盖考试还有两天</p>
+                <img src="IMG_1687.jpeg" class="photo-frame" style="max-height: 400px; width: auto;" alt="自拍">
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInRight">
+                <p style="color: #999; font-size: 0.9rem;">2025.6.15</p>
+                <p>这是准备期末+海投夏令营的时候</p>
+                <p>图书馆焦头烂额时</p>
+                <p>看到的一条可爱消息</p>
+                <img src="IMG_5014.jpeg" class="photo-frame" alt="手表消息">
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInLeft">
+                <p>以及闭馆音乐响起后看到的身影</p>
+                <img src="IMG_5017.jpeg" class="photo-frame" alt="夜晚身影">
+                <p class="highlight">原来</p>
+                <p class="highlight">疲惫终究是可以被削弱的</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <div class="icon-box"><i class="fas fa-map-signs"></i></div>
+                <p>Waz是大众点评小红书携程<br><strong>重度用户</strong></p>
+                <p>从初中开始</p>
+                <p>她一直以来理所应当地承担着攻略任务</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeIn">
+                <p>但其实waz最讨厌做攻略</p>
+                <p>zmx知道</p>
+                <p class="highlight">于是zmx变成了攻略家</p>
+                <div style="display: flex; gap: 10px; overflow-x: auto; margin-top: 15px;">
+                     <img src="0906db525444edbc626d3fbbfe320d91.jpeg" class="photo-frame long-photo" alt="攻略1">
+                     <img src="d9e2f86b316d07d9b44c2c773d17c340.jpeg" class="photo-frame long-photo" alt="攻略2">
+                </div>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__fadeInUp">
+                <div class="icon-box"><i class="fas fa-comments"></i></div>
+                <p>这一年</p>
+                <p>你们有过 <span class="highlight">n次 deep talk</span></p>
+                <p>每一次</p>
+                <p>都在爱的主旨下</p>
+                <p class="highlight">不断包容、成熟</p>
+            </div>
+        </div>
+
+        <div class="swiper-slide">
+            <div class="card ani" data-ani="animate__zoomIn">
+                <p>这一年</p>
+                <p>只是<span class="highlight">未来许多年</span>中的</p>
+                <p>第二年</p>
+                <div style="margin-top: 40px;">
+                    <i class="fas fa-heart fa-beat" style="color: red; font-size: 2rem;"></i>
+                </div>
+                <h2 style="margin-top: 20px; font-family: 'Times New Roman', serif;">HAPPY 2st Anniversary</h2>
+            </div>
+        </div>
+
+        <div class="swiper-slide" id="slide-heart-gallery">
+            <div id="heart-gallery-container">
+                <div class="final-text ani" style="animation-delay: 0.5s;">
+                    <p class="highlight" style="font-size: 1.5rem; background: rgba(255,255,255,0.8); padding: 5px 15px; border-radius: 20px;">还有无数个瞬间...</p>
+                    <p style="font-size: 0.9rem; color: #666; margin-top:10px;">To be continued...</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    
+    <img src="data:image/svg+xml;base64,PHN2ZyB2aWV3Qm94PSIwIDAgMjQgMjQiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEyIDVMMTIgMTlNMTIgNUw2IDExTTEyIDVMMTggMTEiIHN0cm9rZT0iIzMzMyIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48L3N2Zz4=" class="arrow-up" alt="Up">
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+<script>
+    /* =========================================
+       爱心照片墙逻辑
+    ========================================= */
+
+    const yourPhotos = [
+        'IMG_8491.jpeg', 'IMG_8144.jpeg', 'IMG_6785.jpeg', 'IMG_7995.jpeg', 'IMG_7937.jpeg',
+        'IMG_7669.jpeg', 'IMG_7599.jpeg', 'IMG_7461.jpeg', 'IMG_7419.jpeg', 'IMG_7391.jpeg',
+        'IMG_7301.jpeg', 'IMG_6365.jpeg', 'IMG_7245.jpeg', 'IMG_7183.jpeg', 'IMG_7159.jpeg',
+        'IMG_7142.jpeg', 'IMG_6296.jpeg', 'IMG_6283.jpeg', 'IMG_7116.jpeg', 'IMG_7109.jpeg',
+        'IMG_6251.jpeg', 'IMG_6884.jpeg', 'IMG_6504.jpeg', 'IMG_6495.jpeg', 'IMG_5838.jpeg',
+        'IMG_5796.jpeg', 'IMG_5621.jpeg', 'a8a9c09e91e2d4b976acdcf79e43f349.jpeg', 'IMG_5548.jpeg',
+        'IMG_5518.jpeg', 'IMG_5509.jpeg', 'IMG_5077.jpeg', 'IMG_5017.jpeg', 'IMG_5014.jpeg',
+        'IMG_4999.jpeg', 'IMG_4600.jpeg', 'IMG_4587.jpeg', 'IMG_4520.jpeg', 'IMG_4041.jpeg',
+        'IMG_3641.jpeg', 'IMG_3213.jpeg', 'IMG_3050.jpeg', 'IMG_2793.jpeg', 'IMG_2712.jpeg',
+        'IMG_2672.jpeg', 'IMG_2640.jpeg', 'IMG_2628.jpeg', 'IMG_2040.jpeg', 'IMG_2039.jpeg',
+        'dji_export_20250117_photo_0006.jpeg', 'IMG_1936.jpeg', 'IMG_1914.jpeg', 'IMG_1887.jpeg',
+        'IMG_1872.jpeg', 'IMG_1823.jpeg', 'IMG_1790.jpeg', 'IMG_1786.jpeg', 'IMG_1771.jpeg',
+        'IMG_1767.jpeg', 'IMG_1685.jpeg', 'IMG_1655.jpeg', 'IMG_1633.jpeg', 'IMG_1555.jpeg',
+        'IMG_1253.jpeg'
+    ];
+
+    const heartCoords = [
+        {x: -30, y: -80}, {x: -70, y: -80}, {x: -110, y: -60}, {x: -140, y: -30},
+        {x: 30, y: -80}, {x: 70, y: -80}, {x: 110, y: -60}, {x: 140, y: -30},
+        {x: -150, y: 10}, {x: -130, y: 50}, {x: -100, y: 90}, {x: -60, y: 130},
+        {x: 150, y: 10}, {x: 130, y: 50}, {x: 100, y: 90}, {x: 60, y: 130},
+        {x: 0, y: 160}, {x: 0, y: -50}, {x: 0, y: 20},
+        {x: -60, y: -30}, {x: -90, y: 0}, {x: -40, y: 30},
+        {x: 60, y: -30}, {x: 90, y: 0}, {x: 40, y: 30},
+        {x: -20, y: -100}, {x: 20, y: -100}, {x: -85, y: -100}, {x: 85, y: -100},
+        {x: -125, y: -85}, {x: 125, y: -85}, {x: -30, y: 80}, {x: 30, y: 80},
+        {x: 0, y: -115}
+    ];
+
+    /* =========================================
+       资源预加载与 Loading 逻辑
+    ========================================= */
+    const mask = document.getElementById('loading-mask');
+    const percentText = document.getElementById('percent');
+    const progressInner = document.getElementById('progress-inner');
+    const swiperContainer = document.querySelector('.swiper');
+
+    // 收集页面上所有的图片（img标签 + heartGallery里要用的图片）
+    let allImages = Array.from(document.images).map(img => img.src);
+    // 把照片墙的图也加进去预加载
+    allImages = allImages.concat(yourPhotos);
+    // 去重
+    allImages = [...new Set(allImages)];
+
+    let loadedCount = 0;
+    const totalCount = allImages.length;
+
+    // 开始加载
+    if (totalCount === 0) {
+        hideLoading();
+    } else {
+        allImages.forEach(src => {
+            const img = new Image();
+            img.src = src;
+            img.onload = img.onerror = () => {
+                loadedCount++;
+                const percent = Math.floor((loadedCount / totalCount) * 100);
+                percentText.innerText = percent + '%';
+                progressInner.style.width = percent + '%';
+                
+                if (loadedCount >= totalCount) {
+                    setTimeout(hideLoading, 500); // 稍微停顿一下
+                }
+            };
+        });
+    }
+
+    function hideLoading() {
+        mask.style.opacity = '0';
+        swiperContainer.style.opacity = '1'; // 显示内容
+        setTimeout(() => {
+            mask.style.display = 'none';
+            // 初始化 Swiper（等加载完再初始化，体验更好）
+            initSwiper();
+        }, 800);
+    }
+
+    /* =========================================
+       Swiper 初始化 (封装成函数)
+    ========================================= */
+    var swiper;
+    function initSwiper() {
+        swiper = new Swiper(".mySwiper", {
+            direction: "vertical",
+            effect: "slide",
+            speed: 600,
+            threshold: 30, 
+            mousewheel: {
+                thresholdDelta: 70, 
+                sensitivity: 1,
+            },
+            on: {
+                init: function () {
+                    playAnimation(this.slides[this.activeIndex]);
+                    initHeartGallery(); 
+                },
+                slideChangeTransitionEnd: function () {
+                    document.querySelectorAll('.ani').forEach(el => {
+                        el.style.visibility = 'hidden';
+                        el.classList.remove(el.dataset.ani);
+                    });
+                    const currentSlide = this.slides[this.activeIndex];
+                    playAnimation(currentSlide);
+                    if (currentSlide.id === 'slide-heart-gallery') {
+                        animateHeartGallery();
+                    }
+                }
+            },
+        });
+    }
+
+    /* =========================================
+       爱心照片墙逻辑
+    ========================================= */
+    let heartGalleryCreated = false;
+    let heartAnimationPlayed = false;
+
+    function initHeartGallery() {
+        const container = document.getElementById('heart-gallery-container');
+        if (!container || heartGalleryCreated) return;
+
+        heartCoords.forEach((coord, index) => {
+            const img = document.createElement('img');
+            const randomPhoto = yourPhotos[Math.floor(Math.random() * yourPhotos.length)];
+            img.src = randomPhoto;
+            img.className = 'heart-photo';
+            img.dataset.targetX = coord.x;
+            img.dataset.targetY = coord.y;
+            img.dataset.rotate = Math.random() * 40 - 20; 
+            container.appendChild(img);
+        });
+        heartGalleryCreated = true;
+    }
+
+    function animateHeartGallery() {
+        if (heartAnimationPlayed) return;
+        heartAnimationPlayed = true;
+
+        const photos = document.querySelectorAll('.heart-photo');
+        const finalText = document.querySelector('.final-text');
+        let i = 0;
+
+        const intervalId = setInterval(() => {
+            if (i >= photos.length) {
+                clearInterval(intervalId); 
+                setTimeout(() => {
+                    if(finalText) {
+                        finalText.style.visibility = 'visible';
+                        finalText.classList.add('animate__fadeIn'); 
+                        finalText.classList.add('animate__animated');
+                    }
+                }, 1000);
+                return;
+            }
+            const photo = photos[i];
+            photo.classList.add('active'); 
+            photo.style.transform = `translate(${photo.dataset.targetX}px, ${photo.dataset.targetY}px) scale(1) rotate(${photo.dataset.rotate}deg)`;
+            i++;
+        }, 100); 
+    }
+
+    function playAnimation(slide) {
+        const aniItems = slide.querySelectorAll('.ani');
+        aniItems.forEach((item, index) => {
+            item.style.visibility = 'visible';
+            item.classList.add('animate__animated');
+            item.classList.add(item.dataset.ani);
+            if (!item.style.animationDelay) {
+                item.style.animationDelay = (index * 0.2) + 's';
+            }
+        });
+    }
+</script>
+
+</body>
+</html>
